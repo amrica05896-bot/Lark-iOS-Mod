@@ -1,4 +1,4 @@
-name: Lark Player iOS AI Patcher (V17 - Manifest Fix)
+name: Lark Player iOS AI Patcher (V18 ULTRA)
 
 on:
   workflow_dispatch:
@@ -18,79 +18,99 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '17'
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install Pro Tools
+      - name: Install Tools
         run: |
           sudo apt-get update
           sudo apt-get install -y zipalign apksigner jq curl
 
       - name: Download Latest Apktool
         run: |
-          LATEST_VERSION=$(curl -s https://api.github.com/repos/iBotPeaches/Apktool/releases/latest | jq -r .tag_name | sed 's/v//')
-          wget "https://github.com/iBotPeaches/Apktool/releases/download/v${LATEST_VERSION}/apktool_${LATEST_VERSION}.jar" -O apktool.jar
+          VERSION=$(curl -s https://api.github.com/repos/iBotPeaches/Apktool/releases/latest | jq -r .tag_name | sed 's/v//')
+          wget https://github.com/iBotPeaches/Apktool/releases/download/v${VERSION}/apktool_${VERSION}.jar -O apktool.jar
+
+      - name: Check APK
+        run: |
+          if [ ! -f "lark_player.apk" ]; then
+            echo "❌ APK NOT FOUND"
+            exit 1
+          fi
 
       - name: Decompile APK
-        run: java -jar apktool.jar d -f lark_player.apk -o source_code
+        run: java -jar apktool.jar d -f lark_player.apk -o src
 
-      - name: AI Python Smart Patch & Manifest Sterilization
+      - name: AI Patch Engine V18
         run: |
-          cat << 'PY_EOF' > ai_patcher.py
-          import os
-          import re
+          cat << 'PY_EOF' > patch.py
+          import os,re
 
-          source_dir = 'source_code'
-          manifest_path = os.path.join(source_dir, 'AndroidManifest.xml')
+          src = "src"
+          res = os.path.join(src,"res")
+          manifest = os.path.join(src,"AndroidManifest.xml")
 
-          # 1. تعقيم الـ Manifest (حذف لعنة الـ Splits)
-          if os.path.exists(manifest_path):
-              print(">>> [AI] Sterilizing AndroidManifest.xml...")
-              with open(manifest_path, 'r', encoding='utf-8') as f:
-                  lines = f.readlines()
-              
-              with open(manifest_path, 'w', encoding='utf-8') as f:
-                  for line in lines:
-                      # حذف أي سطر فيه إشارة للـ splits0 أو مراجع التقسيم
-                      if 'splits0' not in line and 'com.android.vending.splits' not in line:
-                          f.write(line)
+          print(">>> Fix Manifest (remove splits)")
+          if os.path.exists(manifest):
+              data=open(manifest,"r",encoding="utf-8").read()
+              data=re.sub(r'.*splits.*','',data)
+              data=re.sub(r'.*com.android.vending.splits.*','',data)
+              open(manifest,"w",encoding="utf-8").write(data)
 
-          # 2. حقن الزجاج (iOS Glass)
-          res_dir = os.path.join(source_dir, 'res')
-          drawable_dir = os.path.join(res_dir, 'drawable')
-          os.makedirs(drawable_dir, exist_ok=True)
-          with open(os.path.join(drawable_dir, 'ios_glass_ui.xml'), 'w') as f:
-              f.write('<?xml version="1.0" encoding="utf-8"?><layer-list xmlns:android="http://schemas.android.com/apk/res/android"><item><shape><solid android:color="#66FFFFFF"/><corners android:radius="35dp"/></shape></item><item android:top="1dp" android:left="1dp" android:right="1dp" android:bottom="1dp"><shape><stroke android:width="1.5dp" android:color="#CCFFFFFF"/><corners android:radius="35dp"/></shape></item></layer-list>')
+          print(">>> Create Glass UI")
+          d=os.path.join(res,"drawable")
+          os.makedirs(d,exist_ok=True)
 
-          # 3. استبدال الخلفيات في الـ Layouts
-          for root, dirs, files in os.walk(res_dir):
-              if 'layout' in root:
-                  for file in files:
-                      if any(k in file for k in ['player', 'bottom', 'nav', 'tab', 'toolbar']):
-                          path = os.path.join(root, file)
-                          with open(path, 'r', encoding='utf-8', errors='ignore') as f:
-                              data = f.read()
-                          data = re.sub(r'android:background="[^"]*"', '', data)
-                          data = data.replace('xmlns:android="http://schemas.android.com/apk/res/android"', 
-                                           'xmlns:android="http://schemas.android.com/apk/res/android" android:background="@drawable/ios_glass_ui"')
-                          with open(path, 'w', encoding='utf-8') as f:
-                              f.write(data)
-          print(">>> [AI] Manifest Sterilized and UI Injected!")
+          open(os.path.join(d,"ios_glass.xml"),"w").write("""<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+<item><shape><gradient android:startColor="#66FFFFFF" android:endColor="#22FFFFFF" android:angle="270"/><corners android:radius="30dp"/></shape></item>
+<item><shape><stroke android:width="1.2dp" android:color="#99FFFFFF"/><corners android:radius="30dp"/></shape></item>
+</layer-list>""")
+
+          print(">>> Inject UI Safely")
+
+          for root,dirs,files in os.walk(res):
+              if "layout" in root:
+                  for f in files:
+                      if f.endswith(".xml"):
+                          p=os.path.join(root,f)
+                          try:
+                              txt=open(p,"r",encoding="utf-8",errors="ignore").read()
+
+                              if any(k in f for k in ["player","nav","bottom","toolbar","tab"]):
+
+                                  txt=re.sub(r'android:background="[^"]*"',"",txt)
+
+                                  if "@drawable/ios_glass" not in txt:
+                                      txt=txt.replace(
+                                          'xmlns:android="http://schemas.android.com/apk/res/android"',
+                                          'xmlns:android="http://schemas.android.com/apk/res/android" android:background="@drawable/ios_glass" android:alpha="0.95" android:elevation="12dp"'
+                                      )
+
+                                  open(p,"w",encoding="utf-8").write(txt)
+                          except:
+                              pass
+
+          print(">>> DONE")
           PY_EOF
-          python3 ai_patcher.py
 
-      - name: Rebuild APK (The Final Push)
-        run: java -jar apktool.jar b source_code -o unsigned.apk
+          python3 patch.py
 
-      - name: Zipalign & Sign
+      - name: Build APK
+        run: java -jar apktool.jar b src -o unsigned.apk
+
+      - name: Align APK
+        run: zipalign -p 4 unsigned.apk aligned.apk
+
+      - name: Sign APK
         run: |
-          zipalign -v -p 4 unsigned.apk aligned.apk
-          keytool -genkey -v -keystore ios.keystore -storepass android -alias android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "C=US, O=Android, CN=LarkDev"
-          apksigner sign --ks ios.keystore --ks-pass pass:android --out final_mod.apk aligned.apk
+          keytool -genkey -v -keystore key.keystore -storepass android -alias key -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android,O=Android,C=US"
+          apksigner sign --ks key.keystore --ks-pass pass:android --out final.apk aligned.apk
 
-      - name: Upload Final Mod
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: Lark-iOS-Perfect-Build
-          path: final_mod.apk
+          name: Lark-iOS-V18
+          path: final.apk
