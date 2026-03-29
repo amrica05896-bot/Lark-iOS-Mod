@@ -1,4 +1,4 @@
-name: Lark Player iOS AI Patcher (Ultimate V12)
+name: Lark Player iOS AI Patcher (V13 - Latest Tools)
 
 on:
   workflow_dispatch:
@@ -14,24 +14,38 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Java & Python
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install Pro Tools
+      - name: Install System Tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y zipalign apksigner
-          wget https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar -O apktool.jar
+          sudo apt-get install -y zipalign apksigner jq curl
 
-      - name: Decompile Lark Player
+      - name: Download LATEST Apktool Dynamically
+        run: |
+          # كود سحري بيجيب آخر إصدار نزل من Apktool في 2026
+          LATEST_VERSION=$(curl -s https://api.github.com/repos/iBotPeaches/Apktool/releases/latest | jq -r .tag_name | sed 's/v//')
+          echo "Installing Apktool v${LATEST_VERSION}..."
+          wget "https://github.com/iBotPeaches/Apktool/releases/download/v${LATEST_VERSION}/apktool_${LATEST_VERSION}.jar" -O apktool.jar
+
+      - name: Check for APK File
+        run: |
+          if [ ! -f "lark_player.apk" ]; then
+            echo "Error: lark_player.apk NOT FOUND in the repository!"
+            ls -R
+            exit 1
+          fi
+
+      - name: Decompile Lark Player (Latest Engine)
         run: java -jar apktool.jar d -f lark_player.apk -o source_code
 
-      - name: AI Python UI Transformation
+      - name: AI Python UI Transformation (iOS Glass 2026)
         run: |
           cat << 'PY_EOF' > ai_patcher.py
           import os
@@ -39,7 +53,7 @@ jobs:
 
           res_dir = 'source_code/res'
           
-          print(">>> [AI] Cleaning Filenames & Obfuscation...")
+          # تنظيف الأسماء المزعجة
           for root, dirs, files in os.walk(res_dir):
               for file in files:
                   if '$' in file or any(c.isupper() for c in file):
@@ -49,19 +63,19 @@ jobs:
                       if not os.path.exists(new_path):
                           os.rename(old_path, new_path)
 
-          print(">>> [AI] Forging Complex iOS Glass UI...")
+          # تصميم طبقات الزجاج الفاخرة
           drawable_dir = os.path.join(res_dir, 'drawable')
           os.makedirs(drawable_dir, exist_ok=True)
           with open(os.path.join(drawable_dir, 'ios_glass_ui.xml'), 'w') as f:
               f.write('''<?xml version="1.0" encoding="utf-8"?>
           <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-              <item><shape><solid android:color="#4DFFFFFF"/><corners android:radius="32dp"/></shape></item>
+              <item><shape><solid android:color="#59FFFFFF"/><corners android:radius="35dp"/></shape></item>
               <item android:top="1dp" android:left="1dp" android:right="1dp" android:bottom="1dp">
-                  <shape><stroke android:width="1.5dp" android:color="#CCFFFFFF"/><corners android:radius="32dp"/></shape>
+                  <shape><stroke android:width="1.8dp" android:color="#B3FFFFFF"/><corners android:radius="35dp"/></shape>
               </item>
           </layer-list>''')
 
-          print(">>> [AI] Deep Scan & Background Injection...")
+          # حقن الذكاء الاصطناعي في واجهات لارك
           for root, dirs, files in os.walk(res_dir):
               if 'layout' in root:
                   for file in files:
@@ -70,7 +84,7 @@ jobs:
                           with open(path, 'r', encoding='utf-8', errors='ignore') as f:
                               data = f.read()
                           
-                          keywords = ['player', 'bottom', 'nav', 'tab', 'toolbar', 'dialog', 'panel']
+                          keywords = ['player', 'bottom', 'nav', 'tab', 'toolbar', 'dialog', 'panel', 'surface']
                           if any(k in file for k in keywords):
                               data = re.sub(r'android:background="[^"]*"', '', data)
                               data = data.replace('xmlns:android="http://schemas.android.com/apk/res/android"', 
@@ -78,11 +92,10 @@ jobs:
                               
                               with open(path, 'w', encoding='utf-8') as f:
                                   f.write(data)
-          print(">>> [AI] Transformation Done!")
           PY_EOF
           python3 ai_patcher.py
 
-      - name: Rebuild Lark
+      - name: Rebuild Lark (Ultra High Compression)
         run: java -jar apktool.jar b source_code -o unsigned.apk
 
       - name: Sign & Align Final Build
@@ -91,8 +104,8 @@ jobs:
           keytool -genkey -v -keystore ios.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "C=US, O=Android, CN=LarkDev"
           apksigner sign --ks ios.keystore --ks-pass pass:android aligned.apk
 
-      - name: Upload Finished iOS Edition
+      - name: Upload iOS Edition
         uses: actions/upload-artifact@v4
         with:
-          name: Lark-iOS-Glass-Edition
+          name: Lark-iOS-2026-Edition
           path: aligned.apk
