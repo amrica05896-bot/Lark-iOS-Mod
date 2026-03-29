@@ -1,0 +1,98 @@
+name: Lark Player iOS AI Patcher (Ultimate V12)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build_mod:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java & Python
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Pro Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zipalign apksigner
+          wget https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar -O apktool.jar
+
+      - name: Decompile Lark Player
+        run: java -jar apktool.jar d -f lark_player.apk -o source_code
+
+      - name: AI Python UI Transformation
+        run: |
+          cat << 'PY_EOF' > ai_patcher.py
+          import os
+          import re
+
+          res_dir = 'source_code/res'
+          
+          print(">>> [AI] Cleaning Filenames & Obfuscation...")
+          for root, dirs, files in os.walk(res_dir):
+              for file in files:
+                  if '$' in file or any(c.isupper() for c in file):
+                      old_path = os.path.join(root, file)
+                      new_name = file.replace('$', '_').lower()
+                      new_path = os.path.join(root, new_name)
+                      if not os.path.exists(new_path):
+                          os.rename(old_path, new_path)
+
+          print(">>> [AI] Forging Complex iOS Glass UI...")
+          drawable_dir = os.path.join(res_dir, 'drawable')
+          os.makedirs(drawable_dir, exist_ok=True)
+          with open(os.path.join(drawable_dir, 'ios_glass_ui.xml'), 'w') as f:
+              f.write('''<?xml version="1.0" encoding="utf-8"?>
+          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+              <item><shape><solid android:color="#4DFFFFFF"/><corners android:radius="32dp"/></shape></item>
+              <item android:top="1dp" android:left="1dp" android:right="1dp" android:bottom="1dp">
+                  <shape><stroke android:width="1.5dp" android:color="#CCFFFFFF"/><corners android:radius="32dp"/></shape>
+              </item>
+          </layer-list>''')
+
+          print(">>> [AI] Deep Scan & Background Injection...")
+          for root, dirs, files in os.walk(res_dir):
+              if 'layout' in root:
+                  for file in files:
+                      if file.endswith('.xml'):
+                          path = os.path.join(root, file)
+                          with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+                              data = f.read()
+                          
+                          keywords = ['player', 'bottom', 'nav', 'tab', 'toolbar', 'dialog', 'panel']
+                          if any(k in file for k in keywords):
+                              data = re.sub(r'android:background="[^"]*"', '', data)
+                              data = data.replace('xmlns:android="http://schemas.android.com/apk/res/android"', 
+                                               'xmlns:android="http://schemas.android.com/apk/res/android" android:background="@drawable/ios_glass_ui"')
+                              
+                              with open(path, 'w', encoding='utf-8') as f:
+                                  f.write(data)
+          print(">>> [AI] Transformation Done!")
+          PY_EOF
+          python3 ai_patcher.py
+
+      - name: Rebuild Lark
+        run: java -jar apktool.jar b source_code -o unsigned.apk
+
+      - name: Sign & Align Final Build
+        run: |
+          zipalign -v -p 4 unsigned.apk aligned.apk
+          keytool -genkey -v -keystore ios.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "C=US, O=Android, CN=LarkDev"
+          apksigner sign --ks ios.keystore --ks-pass pass:android aligned.apk
+
+      - name: Upload Finished iOS Edition
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lark-iOS-Glass-Edition
+          path: aligned.apk
