@@ -1,4 +1,4 @@
-name: Lark Player iOS AI Patcher (V13 - Latest Tools)
+name: Lark Player iOS AI Patcher (V14 - Smart Linker)
 
 on:
   workflow_dispatch:
@@ -27,75 +27,94 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y zipalign apksigner jq curl
 
-      - name: Download LATEST Apktool Dynamically
+      - name: Download LATEST Apktool
         run: |
-          # كود سحري بيجيب آخر إصدار نزل من Apktool في 2026
           LATEST_VERSION=$(curl -s https://api.github.com/repos/iBotPeaches/Apktool/releases/latest | jq -r .tag_name | sed 's/v//')
-          echo "Installing Apktool v${LATEST_VERSION}..."
           wget "https://github.com/iBotPeaches/Apktool/releases/download/v${LATEST_VERSION}/apktool_${LATEST_VERSION}.jar" -O apktool.jar
 
-      - name: Check for APK File
-        run: |
-          if [ ! -f "lark_player.apk" ]; then
-            echo "Error: lark_player.apk NOT FOUND in the repository!"
-            ls -R
-            exit 1
-          fi
-
-      - name: Decompile Lark Player (Latest Engine)
+      - name: Decompile Lark Player
         run: java -jar apktool.jar d -f lark_player.apk -o source_code
 
-      - name: AI Python UI Transformation (iOS Glass 2026)
+      - name: AI Python Smart Linker & UI Injection
         run: |
           cat << 'PY_EOF' > ai_patcher.py
           import os
           import re
 
-          res_dir = 'source_code/res'
-          
-          # تنظيف الأسماء المزعجة
+          source_dir = 'source_code'
+          res_dir = os.path.join(source_dir, 'res')
+          mapping = {}
+
+          print(">>> [AI] Step 1: Renaming & Building Map...")
+          # البحث عن الملفات المزعجة وتخزين الاسم القديم والجديد
           for root, dirs, files in os.walk(res_dir):
               for file in files:
-                  if '$' in file or any(c.isupper() for c in file):
+                  if '$' in file:
                       old_path = os.path.join(root, file)
-                      new_name = file.replace('$', '_').lower()
+                      new_name = file.replace('$', '_')
                       new_path = os.path.join(root, new_name)
+                      
+                      # تخزين الاسم بدون امتداد للاستبدال في الـ XML
+                      old_base = os.path.splitext(file)[0]
+                      new_base = os.path.splitext(new_name)[0]
+                      mapping[old_base] = new_base
+                      
                       if not os.path.exists(new_path):
                           os.rename(old_path, new_path)
 
-          # تصميم طبقات الزجاج الفاخرة
+          print(">>> [AI] Step 2: Updating References in XML & Smali...")
+          # البحث والاستبدال في كل ملفات المشروع
+          for root, dirs, files in os.walk(source_dir):
+              for file in files:
+                  if file.endswith(('.xml', '.smali')):
+                      path = os.path.join(root, file)
+                      try:
+                          with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+                              content = f.read()
+                          
+                          changed = False
+                          for old, new in mapping.items():
+                              if old in content:
+                                  content = content.replace(f'@{os.path.basename(root)}/{old}', f'@{os.path.basename(root)}/{new}')
+                                  content = content.replace(f'drawable/{old}', f'drawable/{new}')
+                                  content = content.replace(f'layout/{old}', f'layout/{new}')
+                                  changed = True
+                          
+                          if changed:
+                              with open(path, 'w', encoding='utf-8') as f:
+                                  f.write(content)
+                      except:
+                          pass
+
+          print(">>> [AI] Step 3: Forging iOS Glass UI...")
           drawable_dir = os.path.join(res_dir, 'drawable')
           os.makedirs(drawable_dir, exist_ok=True)
           with open(os.path.join(drawable_dir, 'ios_glass_ui.xml'), 'w') as f:
               f.write('''<?xml version="1.0" encoding="utf-8"?>
           <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-              <item><shape><solid android:color="#59FFFFFF"/><corners android:radius="35dp"/></shape></item>
+              <item><shape><solid android:color="#66FFFFFF"/><corners android:radius="35dp"/></shape></item>
               <item android:top="1dp" android:left="1dp" android:right="1dp" android:bottom="1dp">
-                  <shape><stroke android:width="1.8dp" android:color="#B3FFFFFF"/><corners android:radius="35dp"/></shape>
+                  <shape><stroke android:width="1.5dp" android:color="#CCFFFFFF"/><corners android:radius="35dp"/></shape>
               </item>
           </layer-list>''')
 
-          # حقن الذكاء الاصطناعي في واجهات لارك
+          print(">>> [AI] Step 4: UI Background Injection...")
           for root, dirs, files in os.walk(res_dir):
               if 'layout' in root:
                   for file in files:
-                      if file.endswith('.xml'):
+                      if any(k in file for k in ['player', 'bottom', 'nav', 'tab', 'toolbar', 'panel']):
                           path = os.path.join(root, file)
                           with open(path, 'r', encoding='utf-8', errors='ignore') as f:
                               data = f.read()
-                          
-                          keywords = ['player', 'bottom', 'nav', 'tab', 'toolbar', 'dialog', 'panel', 'surface']
-                          if any(k in file for k in keywords):
-                              data = re.sub(r'android:background="[^"]*"', '', data)
-                              data = data.replace('xmlns:android="http://schemas.android.com/apk/res/android"', 
-                                               'xmlns:android="http://schemas.android.com/apk/res/android" android:background="@drawable/ios_glass_ui"')
-                              
-                              with open(path, 'w', encoding='utf-8') as f:
-                                  f.write(data)
+                          data = re.sub(r'android:background="[^"]*"', '', data)
+                          data = data.replace('xmlns:android="http://schemas.android.com/apk/res/android"', 
+                                           'xmlns:android="http://schemas.android.com/apk/res/android" android:background="@drawable/ios_glass_ui"')
+                          with open(path, 'w', encoding='utf-8') as f:
+                              f.write(data)
           PY_EOF
           python3 ai_patcher.py
 
-      - name: Rebuild Lark (Ultra High Compression)
+      - name: Rebuild Lark
         run: java -jar apktool.jar b source_code -o unsigned.apk
 
       - name: Sign & Align Final Build
@@ -107,5 +126,5 @@ jobs:
       - name: Upload iOS Edition
         uses: actions/upload-artifact@v4
         with:
-          name: Lark-iOS-2026-Edition
+          name: Lark-iOS-Glass-Final
           path: aligned.apk
