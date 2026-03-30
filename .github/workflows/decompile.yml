@@ -1,4 +1,4 @@
-name: Lark Player Total iOS Immersion (V19 - Glass Video Mark)
+name: Lark Player Total iOS Immersion (V20 - Clean XML)
 
 on:
   workflow_dispatch:
@@ -35,7 +35,7 @@ jobs:
       - name: Decompile APK
         run: java -jar apktool.jar d -f lark_player.apk -o source_code
 
-      - name: AI Python Smart Patch & Real iOS Glass Injection
+      - name: AI Python Smart Patch (Clean XML)
         run: |
           cat << 'PY_EOF' > ai_patcher.py
           import os
@@ -44,9 +44,8 @@ jobs:
           source_dir = 'source_code'
           manifest_path = os.path.join(source_dir, 'AndroidManifest.xml')
 
-          # 1. تعقيم الـ Manifest (عشان ميبقاش فيه غلط في البناء)
+          # 1. تعقيم الـ Manifest
           if os.path.exists(manifest_path):
-              print(">>> [AI] Sterilizing AndroidManifest.xml...")
               with open(manifest_path, 'r', encoding='utf-8') as f:
                   lines = f.readlines()
               with open(manifest_path, 'w', encoding='utf-8') as f:
@@ -58,71 +57,53 @@ jobs:
           drawable_dir = os.path.join(res_dir, 'drawable')
           os.makedirs(drawable_dir, exist_ok=True)
 
-          # 2. خلق الزجاج الحقيقي المعقد (Real Frosted Glassmorphism V18+ Refined)
-          print(">>> [AI] Forging Sophisticated iOS Frosted Glass UI...")
+          # 2. ملف الزجاج الحقيقي (بدون أي تعليقات تسبب إيرور)
           with open(os.path.join(drawable_dir, 'ios_real_glass_ui.xml'), 'w') as f:
               f.write('''<?xml version="1.0" encoding="utf-8"?>
           <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-              # طبقة 1: تظليل خارجي (Drop Shadow) لعمق 
               <item android:top="2dp" android:left="0dp" android:right="0dp" android:bottom="0dp">
                   <shape android:shape="rectangle">
-                      <solid android:color="#0D000000" /> <corners android:radius="35dp" />
-                  </shape>
-              </item>
-              # طبقة 2: أساس الزجاج الأبيض المجمد (Frosted Base)
-              <item android:bottom="2dp">
-                  <shape android:shape="rectangle">
-                      <solid android:color="#66FFFFFF" /> <corners android:radius="35dp" />
-                  </shape>
-              </item>
-              # طبقة 3: تدرج لمعة الزجاج (Reflection Gradient)
-              <item android:bottom="2dp">
-                  <shape android:shape="rectangle">
-                      <gradient
-                          android:angle="135"
-                          android:startColor="#80FFFFFF"
-                          android:centerColor="#0DFFFFFF" # Slightly smoother center transparency
-                          android:endColor="#4DFFFFFF"
-                          android:type="linear" />
+                      <solid android:color="#0D000000" />
                       <corners android:radius="35dp" />
                   </shape>
               </item>
-              # طبقة 4: تظليل داخلي سفلي لعمق الزجاج (Inner Glow/Shadow)
-              <item android:top="25dp" android:bottom="2dp">
+              <item android:bottom="2dp">
                   <shape android:shape="rectangle">
-                      <gradient
-                          android:angle="90"
-                          android:startColor="#26000000"
-                          android:endColor="#00000000" />
-                      <corners
-                          android:topLeftRadius="0dp"
-                          android:topRightRadius="0dp"
-                          android:bottomLeftRadius="35dp"
-                          android:bottomRightRadius="35dp" />
+                      <solid android:color="#66FFFFFF" />
+                      <corners android:radius="35dp" />
                   </shape>
               </item>
-              # طبقة 5: الإطار الزجاجي العاكس (High Gloss Border)
+              <item android:bottom="2dp">
+                  <shape android:shape="rectangle">
+                      <gradient android:angle="135" android:startColor="#80FFFFFF" android:centerColor="#0DFFFFFF" android:endColor="#4DFFFFFF" android:type="linear" />
+                      <corners android:radius="35dp" />
+                  </shape>
+              </item>
+              <item android:top="25dp" android:bottom="2dp">
+                  <shape android:shape="rectangle">
+                      <gradient android:angle="90" android:startColor="#26000000" android:endColor="#00000000" />
+                      <corners android:topLeftRadius="0dp" android:topRightRadius="0dp" android:bottomLeftRadius="35dp" android:bottomRightRadius="35dp" />
+                  </shape>
+              </item>
               <item android:bottom="2dp">
                   <shape android:shape="rectangle">
                       <solid android:color="@android:color/transparent" />
-                      <stroke
-                          android:width="1.8dp"
-                          android:color="#B3FFFFFF" /> <corners android:radius="35dp" />
+                      <stroke android:width="1.8dp" android:color="#B3FFFFFF" />
+                      <corners android:radius="35dp" />
                   </shape>
               </item>
           </layer-list>''')
 
-          # 3. خلق علامة الفيديو الزجاجية (The Glass Video Mark)
-          print(">>> [AI] Creating Glass Video Mark Drawable...")
+          # 3. ملف العلامة المائية الزجاجية
           with open(os.path.join(drawable_dir, 'ios_watermark_glass.xml'), 'w') as f:
-              # تصميم دائري زجاجي صغير
               f.write('''<?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
-              <solid android:color="#73FFFFFF" /> <stroke android:width="1dp" android:color="#CCFFFFFF" /> <size android:width="42dp" android:height="42dp" />
+              <solid android:color="#73FFFFFF" />
+              <stroke android:width="1dp" android:color="#CCFFFFFF" />
+              <size android:width="42dp" android:height="42dp" />
           </shape>''')
 
-          # 4. الحقن الذكي في الواجهات (Lark Player Total Immersion)
-          print(">>> [AI] Deep Scan & Ground-up UI Background Injection...")
+          # 4. الحقن في الواجهات
           for root, dirs, files in os.walk(res_dir):
               if 'layout' in root:
                   for file in files:
@@ -131,26 +112,21 @@ jobs:
                           with open(path, 'r', encoding='utf-8', errors='ignore') as f:
                               data = f.read()
                           
-                          # (أ) حقن الخلفية الزجاجية الكبيرة في حتت الواجهة
+                          # حقن الزجاج في القوائم
                           keywords_bg = ['player', 'bottom', 'nav', 'tab', 'toolbar', 'dialog', 'panel', 'surface', 'bar', 'side']
                           if any(k in file for k in keywords_bg):
-                              # مسح الخلفيات القديمة خالص عشان متبانش ورا الزجاج
                               data = re.sub(r'android:background="[^"]*"', '', data)
-                              # حقن الزجاج الحقيقي الجديد
                               data = data.replace('xmlns:android="http://schemas.android.com/apk/res/android"', 
                                                'xmlns:android="http://schemas.android.com/apk/res/android" android:background="@drawable/ios_real_glass_ui"')
                           
-                          # (ب) حقن علامة الفيديو الزجاجية (The Glass Mark) في مشغل الفيديو
-                          # سنبحث عن ملفات الـ layout الخاصة بالـ player ونبحث عن أول تاج رئيسي (FrameLayout or similar)
+                          # حقن العلامة المائية في الفيديو
                           if 'player' in file and 'bottom' not in file and 'nav' not in file:
-                              # البحث عن مكان لحقن العلامة المائية في أول تاج FrameLayout
-                              watermark_code = '\n\t<ImageView\n\t\tandroid:layout_width="wrap_content"\n\t\tandroid:layout_height="wrap_content"\n\t\tandroid:layout_gravity="top|end"\n\t\tandroid:layout_marginTop="20dp"\n\t\tandroid:layout_marginEnd="20dp"\n\t\tandroid:padding="8dp"\n\t\tandroid:src="@drawable/ios_watermark_glass"\n\t\tandroid:id="@id/ios_watermark_mark"\n\t\tandroid:alpha="0.8" />\n'
-                              # محاولة حقنها كأول عنصر داخل أول FrameLayout
-                              data = re.sub(r'(<FrameLayout[^>]*>)', r'\1' + watermark_code, data, 1)
+                              watermark_code = '\n    <ImageView android:layout_width="42dp" android:layout_height="42dp" android:layout_gravity="top|end" android:layout_marginTop="20dp" android:layout_marginEnd="20dp" android:src="@drawable/ios_watermark_glass" android:id="@+id/ios_watermark_mark" android:elevation="5dp" />\n'
+                              # حقن بعد أول فريم لاي أوت
+                              data = re.sub(r'(<FrameLayout[^>]*>)', r'\1' + watermark_code, data, count=1)
 
                           with open(path, 'w', encoding='utf-8') as f:
                               f.write(data)
-          print(">>> [AI] Real Glass Injection & Video Mark Done!")
           PY_EOF
           python3 ai_patcher.py
 
@@ -160,11 +136,11 @@ jobs:
       - name: Zipalign & Sign
         run: |
           zipalign -v -p 4 unsigned.apk aligned.apk
-          keytool -genkey -v -keystore deb.keystore -storepass android -alias deb alias deb -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "C=US, O=Android, CN=LarkDev"
-          apksigner sign --ks deb.keystore --ks-pass pass:android --out final_mod.apk aligned.apk
+          keytool -genkey -v -keystore ios.keystore -storepass android -alias android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "C=US, O=Android, CN=LarkDev"
+          apksigner sign --ks ios.keystore --ks-pass pass:android --out final_mod.apk aligned.apk
 
-      - name: Upload Finished Mod
+      - name: Upload Final Mod
         uses: actions/upload-artifact@v4
         with:
-          name: Lark-iOS-Total-Immersion
+          name: Lark-iOS-Perfect-Build
           path: final_mod.apk
