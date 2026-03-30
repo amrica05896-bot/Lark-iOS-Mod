@@ -1,4 +1,4 @@
-name: Lark Player iOS AI Patcher (V18 ULTRA)
+name: Lark Player Total iOS Immersion (V19 - Glass Video Mark)
 
 on:
   workflow_dispatch:
@@ -18,99 +18,153 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '17'
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install Tools
+      - name: Install System Tools
         run: |
           sudo apt-get update
           sudo apt-get install -y zipalign apksigner jq curl
 
       - name: Download Latest Apktool
         run: |
-          VERSION=$(curl -s https://api.github.com/repos/iBotPeaches/Apktool/releases/latest | jq -r .tag_name | sed 's/v//')
-          wget https://github.com/iBotPeaches/Apktool/releases/download/v${VERSION}/apktool_${VERSION}.jar -O apktool.jar
-
-      - name: Check APK
-        run: |
-          if [ ! -f "lark_player.apk" ]; then
-            echo "❌ APK NOT FOUND"
-            exit 1
-          fi
+          LATEST_VERSION=$(curl -s https://api.github.com/repos/iBotPeaches/Apktool/releases/latest | jq -r .tag_name | sed 's/v//')
+          wget "https://github.com/iBotPeaches/Apktool/releases/download/v${LATEST_VERSION}/apktool_${LATEST_VERSION}.jar" -O apktool.jar
 
       - name: Decompile APK
-        run: java -jar apktool.jar d -f lark_player.apk -o src
+        run: java -jar apktool.jar d -f lark_player.apk -o source_code
 
-      - name: AI Patch Engine V18
+      - name: AI Python Smart Patch & Real iOS Glass Injection
         run: |
-          cat << 'PY_EOF' > patch.py
-          import os,re
+          cat << 'PY_EOF' > ai_patcher.py
+          import os
+          import re
 
-          src = "src"
-          res = os.path.join(src,"res")
-          manifest = os.path.join(src,"AndroidManifest.xml")
+          source_dir = 'source_code'
+          manifest_path = os.path.join(source_dir, 'AndroidManifest.xml')
 
-          print(">>> Fix Manifest (remove splits)")
-          if os.path.exists(manifest):
-              data=open(manifest,"r",encoding="utf-8").read()
-              data=re.sub(r'.*splits.*','',data)
-              data=re.sub(r'.*com.android.vending.splits.*','',data)
-              open(manifest,"w",encoding="utf-8").write(data)
+          # 1. تعقيم الـ Manifest (عشان ميبقاش فيه غلط في البناء)
+          if os.path.exists(manifest_path):
+              print(">>> [AI] Sterilizing AndroidManifest.xml...")
+              with open(manifest_path, 'r', encoding='utf-8') as f:
+                  lines = f.readlines()
+              with open(manifest_path, 'w', encoding='utf-8') as f:
+                  for line in lines:
+                      if 'splits0' not in line and 'com.android.vending.splits' not in line:
+                          f.write(line)
 
-          print(">>> Create Glass UI")
-          d=os.path.join(res,"drawable")
-          os.makedirs(d,exist_ok=True)
+          res_dir = 'source_code/res'
+          drawable_dir = os.path.join(res_dir, 'drawable')
+          os.makedirs(drawable_dir, exist_ok=True)
 
-          open(os.path.join(d,"ios_glass.xml"),"w").write("""<?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-<item><shape><gradient android:startColor="#66FFFFFF" android:endColor="#22FFFFFF" android:angle="270"/><corners android:radius="30dp"/></shape></item>
-<item><shape><stroke android:width="1.2dp" android:color="#99FFFFFF"/><corners android:radius="30dp"/></shape></item>
-</layer-list>""")
+          # 2. خلق الزجاج الحقيقي المعقد (Real Frosted Glassmorphism V18+ Refined)
+          print(">>> [AI] Forging Sophisticated iOS Frosted Glass UI...")
+          with open(os.path.join(drawable_dir, 'ios_real_glass_ui.xml'), 'w') as f:
+              f.write('''<?xml version="1.0" encoding="utf-8"?>
+          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+              # طبقة 1: تظليل خارجي (Drop Shadow) لعمق 
+              <item android:top="2dp" android:left="0dp" android:right="0dp" android:bottom="0dp">
+                  <shape android:shape="rectangle">
+                      <solid android:color="#0D000000" /> <corners android:radius="35dp" />
+                  </shape>
+              </item>
+              # طبقة 2: أساس الزجاج الأبيض المجمد (Frosted Base)
+              <item android:bottom="2dp">
+                  <shape android:shape="rectangle">
+                      <solid android:color="#66FFFFFF" /> <corners android:radius="35dp" />
+                  </shape>
+              </item>
+              # طبقة 3: تدرج لمعة الزجاج (Reflection Gradient)
+              <item android:bottom="2dp">
+                  <shape android:shape="rectangle">
+                      <gradient
+                          android:angle="135"
+                          android:startColor="#80FFFFFF"
+                          android:centerColor="#0DFFFFFF" # Slightly smoother center transparency
+                          android:endColor="#4DFFFFFF"
+                          android:type="linear" />
+                      <corners android:radius="35dp" />
+                  </shape>
+              </item>
+              # طبقة 4: تظليل داخلي سفلي لعمق الزجاج (Inner Glow/Shadow)
+              <item android:top="25dp" android:bottom="2dp">
+                  <shape android:shape="rectangle">
+                      <gradient
+                          android:angle="90"
+                          android:startColor="#26000000"
+                          android:endColor="#00000000" />
+                      <corners
+                          android:topLeftRadius="0dp"
+                          android:topRightRadius="0dp"
+                          android:bottomLeftRadius="35dp"
+                          android:bottomRightRadius="35dp" />
+                  </shape>
+              </item>
+              # طبقة 5: الإطار الزجاجي العاكس (High Gloss Border)
+              <item android:bottom="2dp">
+                  <shape android:shape="rectangle">
+                      <solid android:color="@android:color/transparent" />
+                      <stroke
+                          android:width="1.8dp"
+                          android:color="#B3FFFFFF" /> <corners android:radius="35dp" />
+                  </shape>
+              </item>
+          </layer-list>''')
 
-          print(">>> Inject UI Safely")
+          # 3. خلق علامة الفيديو الزجاجية (The Glass Video Mark)
+          print(">>> [AI] Creating Glass Video Mark Drawable...")
+          with open(os.path.join(drawable_dir, 'ios_watermark_glass.xml'), 'w') as f:
+              # تصميم دائري زجاجي صغير
+              f.write('''<?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+              <solid android:color="#73FFFFFF" /> <stroke android:width="1dp" android:color="#CCFFFFFF" /> <size android:width="42dp" android:height="42dp" />
+          </shape>''')
 
-          for root,dirs,files in os.walk(res):
-              if "layout" in root:
-                  for f in files:
-                      if f.endswith(".xml"):
-                          p=os.path.join(root,f)
-                          try:
-                              txt=open(p,"r",encoding="utf-8",errors="ignore").read()
+          # 4. الحقن الذكي في الواجهات (Lark Player Total Immersion)
+          print(">>> [AI] Deep Scan & Ground-up UI Background Injection...")
+          for root, dirs, files in os.walk(res_dir):
+              if 'layout' in root:
+                  for file in files:
+                      if file.endswith('.xml'):
+                          path = os.path.join(root, file)
+                          with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+                              data = f.read()
+                          
+                          # (أ) حقن الخلفية الزجاجية الكبيرة في حتت الواجهة
+                          keywords_bg = ['player', 'bottom', 'nav', 'tab', 'toolbar', 'dialog', 'panel', 'surface', 'bar', 'side']
+                          if any(k in file for k in keywords_bg):
+                              # مسح الخلفيات القديمة خالص عشان متبانش ورا الزجاج
+                              data = re.sub(r'android:background="[^"]*"', '', data)
+                              # حقن الزجاج الحقيقي الجديد
+                              data = data.replace('xmlns:android="http://schemas.android.com/apk/res/android"', 
+                                               'xmlns:android="http://schemas.android.com/apk/res/android" android:background="@drawable/ios_real_glass_ui"')
+                          
+                          # (ب) حقن علامة الفيديو الزجاجية (The Glass Mark) في مشغل الفيديو
+                          # سنبحث عن ملفات الـ layout الخاصة بالـ player ونبحث عن أول تاج رئيسي (FrameLayout or similar)
+                          if 'player' in file and 'bottom' not in file and 'nav' not in file:
+                              # البحث عن مكان لحقن العلامة المائية في أول تاج FrameLayout
+                              watermark_code = '\n\t<ImageView\n\t\tandroid:layout_width="wrap_content"\n\t\tandroid:layout_height="wrap_content"\n\t\tandroid:layout_gravity="top|end"\n\t\tandroid:layout_marginTop="20dp"\n\t\tandroid:layout_marginEnd="20dp"\n\t\tandroid:padding="8dp"\n\t\tandroid:src="@drawable/ios_watermark_glass"\n\t\tandroid:id="@id/ios_watermark_mark"\n\t\tandroid:alpha="0.8" />\n'
+                              # محاولة حقنها كأول عنصر داخل أول FrameLayout
+                              data = re.sub(r'(<FrameLayout[^>]*>)', r'\1' + watermark_code, data, 1)
 
-                              if any(k in f for k in ["player","nav","bottom","toolbar","tab"]):
-
-                                  txt=re.sub(r'android:background="[^"]*"',"",txt)
-
-                                  if "@drawable/ios_glass" not in txt:
-                                      txt=txt.replace(
-                                          'xmlns:android="http://schemas.android.com/apk/res/android"',
-                                          'xmlns:android="http://schemas.android.com/apk/res/android" android:background="@drawable/ios_glass" android:alpha="0.95" android:elevation="12dp"'
-                                      )
-
-                                  open(p,"w",encoding="utf-8").write(txt)
-                          except:
-                              pass
-
-          print(">>> DONE")
+                          with open(path, 'w', encoding='utf-8') as f:
+                              f.write(data)
+          print(">>> [AI] Real Glass Injection & Video Mark Done!")
           PY_EOF
+          python3 ai_patcher.py
 
-          python3 patch.py
+      - name: Rebuild Lark
+        run: java -jar apktool.jar b source_code -o unsigned.apk
 
-      - name: Build APK
-        run: java -jar apktool.jar b src -o unsigned.apk
-
-      - name: Align APK
-        run: zipalign -p 4 unsigned.apk aligned.apk
-
-      - name: Sign APK
+      - name: Zipalign & Sign
         run: |
-          keytool -genkey -v -keystore key.keystore -storepass android -alias key -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android,O=Android,C=US"
-          apksigner sign --ks key.keystore --ks-pass pass:android --out final.apk aligned.apk
+          zipalign -v -p 4 unsigned.apk aligned.apk
+          keytool -genkey -v -keystore deb.keystore -storepass android -alias deb alias deb -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "C=US, O=Android, CN=LarkDev"
+          apksigner sign --ks deb.keystore --ks-pass pass:android --out final_mod.apk aligned.apk
 
-      - name: Upload
+      - name: Upload Finished Mod
         uses: actions/upload-artifact@v4
         with:
-          name: Lark-iOS-V18
-          path: final.apk
+          name: Lark-iOS-Total-Immersion
+          path: final_mod.apk
